@@ -61,6 +61,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  int selectedRestSeconds = 15;
+  final List<int> timeList = [15, 30, 45, 60, 75, 90, 105, 120, 135];
   Timer? _timer;
   int timeLeft = 30;
   bool isTimerRunning = false;
@@ -82,7 +84,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState((){
       timeLeft = 30;
       isTimerRunning = true;
-      currentView = homepageView.countdownTimer;
+      currentView = homepageView.timeSelect;
     });
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer){
@@ -91,71 +93,84 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void handleTimeout(){
-    currentView = homepageView.start;
+    currentView = homepageView.timeSelect;
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FloatingActionButton.extended(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(75.0)),
-              onPressed: startTimer,
-              tooltip: "Starts a new timer",
-              label: Text(timeLeft.toString(),
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+            title: Text(widget.title),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: switch(currentView){
+              homepageView.start => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FloatingActionButton.extended(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(75.0)),
+                    onPressed: startTimer,
+                    tooltip: "Starts a new timer",
+                    label: Text("Start a new timer",
+                      style: TextStyle(
+                        color: Colors.black
+                      )
+                    ),
+                    backgroundColor: Colors.white,
+                  )
+                ],
+              ),
+              ),
+                    homepageView.timeSelect => Center(child: 
+                    Column(
+            children: [
+              const SizedBox(
+                height: 40,
+              ),
+              const Text(
+                "Please select desired rest time",
                 style: TextStyle(
-                  color: Colors.white
+                  fontSize: 24,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: timeList.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index){
+                    final seconds = timeList[index];
+                    return ListTile(
+                      leading: Icon(Icons.access_alarm),
+                      title: Text(
+                        seconds.toString(),
+                        textAlign: TextAlign.center,
+                      ),
+                      tileColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                        side: BorderSide(
+                          color: Colors.grey,
+                          width: 2.0
+                        )
+                      ),
+                      minVerticalPadding: 10.0,
+                      
+                    );
+                  }
                 )
               ),
-              backgroundColor: Colors.indigo,
-            ),
-            FloatingActionButton.extended(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(75.0)),
-              onPressed: startTimer,
-              tooltip: "Starts a new timer",
-              label: Text("Start a new timer",
-                style: TextStyle(
-                  color: Colors.white
-                )
-              ),
-              backgroundColor: Colors.indigo,
-            )
-          ],
-        ),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+            ],
+                    )
+                    ),
+                  homepageView.countdownTimer => Column(
+            
+                  )
+                },
+          )
+        );
   }
 }
