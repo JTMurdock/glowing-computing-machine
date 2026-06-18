@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 
 enum homepageView{
@@ -61,10 +62,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int selectedRestSeconds = 15;
-  final List<int> timeList = [15, 30, 45, 60, 75, 90, 105, 120, 135];
+  double selectedRestSeconds = 15;
+  final List<double> timeList = [15, 30, 45, 60, 75, 90, 105, 120, 135];
   Timer? _timer;
-  int timeLeft = 30;
+  double timeLeft = 30.0;
   bool isTimerRunning = false;
   homepageView currentView = homepageView.start;
 
@@ -82,9 +83,13 @@ class _MyHomePageState extends State<MyHomePage> {
   void startTimer() {
     _timer?.cancel();
     setState((){
-      timeLeft = 30;
+      if (!isTimerRunning){
       isTimerRunning = true;
-      currentView = homepageView.timeSelect;
+      countdown();
+      }
+      else{
+        isTimerRunning = false;
+      }
     });
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer){
@@ -112,7 +117,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: [
                   FloatingActionButton.extended(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(75.0)),
-                    onPressed: startTimer,
+                    onPressed: (){
+                      setState((){currentView = homepageView.timeSelect;});
+                      },
                     tooltip: "Starts a new timer",
                     label: Text("Start a new timer",
                       style: TextStyle(
@@ -127,23 +134,38 @@ class _MyHomePageState extends State<MyHomePage> {
                     homepageView.timeSelect => Center(child: 
                     Column(
             children: [
-              const SizedBox(
-                height: 40,
-              ),
-              const Text(
-                "Please select desired rest time",
-                style: TextStyle(
-                  fontSize: 24,
+              Stack(
+                children:[
+                  SizedBox(
+                    height: 40,
+                    child: Container(
+                      color: Colors.white,
+                      ),
+                    
+                  ),
+                  const Text(
+                    "Please select desired rest time",
+                    style: TextStyle(
+                    fontSize: 24,
                 ),
               ),
+                ]
+               ),
               const SizedBox(height: 8),
               Expanded(
                 child: ListView.separated(
                   itemCount: timeList.length,
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index){
-                    final seconds = timeList[index];
+                    final double seconds = timeList[index];
                     return ListTile(
+                      onTap: (){
+                        selectedRestSeconds = seconds;
+                        setState(() {
+                          currentView = homepageView.countdownTimer;
+                          timeLeft = selectedRestSeconds;
+                        });
+                        },
                       leading: Icon(Icons.access_alarm),
                       title: Text(
                         seconds.toString(),
@@ -166,8 +188,33 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
                     )
                     ),
-                  homepageView.countdownTimer => Column(
-            
+                homepageView.countdownTimer => Center(
+                    child: Column(
+                      children: [ 
+                        SizedBox( 
+                          width: 280.0,
+                          height: 280.0,
+                          child: 
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Text(timeLeft.toString()),
+                                SizedBox(
+                                  height: 280,
+                                  width: 280,
+                                  child: CircularProgressIndicator(
+                                  value: (timeLeft / selectedRestSeconds),
+                                )
+                                )
+                              ]
+                            )
+                        ),
+                        IconButton(
+                          onPressed: startTimer,
+                          icon: Icon(isTimerRunning ? Icons.pause : Icons.play_arrow),
+                        ),
+                      ],
+                    )
                   )
                 },
           )
