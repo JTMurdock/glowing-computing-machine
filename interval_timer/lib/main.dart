@@ -2,11 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 
-enum homepageView{
-    start,
-    timeSelect,
-    countdownTimer
-  }
+enum homepageView { start, timeSelect, countdownTimer }
 
 void main() {
   runApp(const MyApp());
@@ -21,21 +17,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Workout Rest Timer',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
       home: const MyHomePage(title: 'Rest Timer'),
@@ -45,15 +26,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -69,155 +41,292 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isTimerRunning = false;
   homepageView currentView = homepageView.start;
 
-    void countdown(){
-      if(isTimerRunning && timeLeft > 0){
-        setState(() {
-          timeLeft--;
-        });
-      }
-      else{
-        isTimerRunning = false;
-      }
+  void countdown() {
+    if (isTimerRunning && timeLeft > 0) {
+      setState(() {
+        timeLeft--;
+      });
+    } else {
+      isTimerRunning = false;
     }
-  
+  }
+
   void startTimer() {
     _timer?.cancel();
-    setState((){
-      if (!isTimerRunning){
-      isTimerRunning = true;
-      countdown();
-      }
-      else{
+    setState(() {
+      if (!isTimerRunning) {
+        isTimerRunning = true;
+        countdown();
+      } else {
         isTimerRunning = false;
       }
     });
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer){
-    countdown();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      countdown();
     });
   }
 
-  void handleTimeout(){
+  void restartTimer() {
+    _timer?.cancel();
+    setState(() {
+      timeLeft = selectedRestSeconds;
+      isTimerRunning = false;
+    });
+  }
+
+  void cancelTimer() {
+    setState(() {
+      _timer?.cancel();
+      isTimerRunning = false;
+      currentView = homepageView.timeSelect;
+    });
+  }
+
+  Future<void> customTimer() async{
+    final TextEditingController minuteController = TextEditingController();
+    final TextEditingController secondController = TextEditingController();
+    final customTime = await showDialog<int>(context: context,
+    builder: (context){
+      final int customTime = 0;
+      return AlertDialog(
+        title: Text("Enter rest time:"),
+        content: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: minuteController,
+                textAlign: TextAlign.right,
+              ),
+            ),
+            Text(":"),
+            Expanded(
+              child: TextField(
+                controller: secondController,
+              ),
+            )
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: (){
+              final minutes = int.tryParse(minuteController.text);
+              final seconds = int.tryParse(secondController.text);
+              if (minutes != null && seconds != null){
+                Navigator.pop(context, ((minutes * 60) + seconds));
+              }
+            },
+            child: Text("Save")),
+          TextButton(
+            onPressed: (){Navigator.pop(context);},
+            child: Text("Cancel"))
+        ],
+    
+      );
+      }
+    );
+    if (customTime == null){
+        return;
+      }
+    selectedRestSeconds = customTime.toDouble();
+    timeLeft = selectedRestSeconds;
+    startTimer();
+    setState(() {
+      currentView = homepageView.countdownTimer;
+    });
+  }
+
+  void handleTimeout() {
     currentView = homepageView.timeSelect;
+  }
+
+  String secondsToMinutes(double time) {
+    int minutes = (time / 60).toInt();
+    int seconds = (time % 60).toInt();
+
+    return ("$minutes:${seconds.toString().padLeft(2, '0')}");
   }
 
   @override
   Widget build(BuildContext context) {
-        return Scaffold(
-          appBar: AppBar(
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-            title: Text(widget.title),
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: switch(currentView){
-              homepageView.start => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FloatingActionButton.extended(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(75.0)),
-                    onPressed: (){
-                      setState((){currentView = homepageView.timeSelect;});
-                      },
-                    tooltip: "Starts a new timer",
-                    label: Text("Start a new timer",
-                      style: TextStyle(
-                        color: Colors.black
-                      )
-                    ),
-                    backgroundColor: Colors.white,
-                  )
-                ],
-              ),
-              ),
-                    homepageView.timeSelect => Center(child: 
-                    Column(
+    return Scaffold(
+      body: switch (currentView) {
+        homepageView.start => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Stack(
-                children:[
-                  SizedBox(
-                    height: 40,
-                    child: Container(
-                      color: Colors.white,
-                      ),
-                    
-                  ),
-                  const Text(
-                    "Please select desired rest time",
-                    style: TextStyle(
-                    fontSize: 24,
+              FloatingActionButton.extended(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(75.0),
                 ),
-              ),
-                ]
-               ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: timeList.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index){
-                    final double seconds = timeList[index];
-                    return ListTile(
-                      onTap: (){
-                        selectedRestSeconds = seconds;
-                        setState(() {
-                          currentView = homepageView.countdownTimer;
-                          timeLeft = selectedRestSeconds;
-                        });
-                        },
-                      leading: Icon(Icons.access_alarm),
-                      title: Text(
-                        seconds.toString(),
-                        textAlign: TextAlign.center,
-                      ),
-                      tileColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0),
-                        side: BorderSide(
-                          color: Colors.grey,
-                          width: 2.0
-                        )
-                      ),
-                      minVerticalPadding: 10.0,
-                      
-                    );
-                  }
-                )
+                onPressed: () {
+                  setState(() {
+                    currentView = homepageView.timeSelect;
+                  });
+                },
+                tooltip: "Starts a new timer",
+                label: Text(
+                  "Start a new timer",
+                  style: TextStyle(color: Colors.black),
+                ),
+                backgroundColor: Colors.white,
               ),
             ],
-                    )
-                    ),
-                homepageView.countdownTimer => Center(
-                    child: Column(
-                      children: [ 
-                        SizedBox( 
-                          width: 280.0,
-                          height: 280.0,
-                          child: 
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Text(timeLeft.toString()),
-                                SizedBox(
-                                  height: 280,
-                                  width: 280,
-                                  child: CircularProgressIndicator(
-                                  value: (timeLeft / selectedRestSeconds),
-                                )
-                                )
-                              ]
-                            )
-                        ),
-                        IconButton(
-                          onPressed: startTimer,
-                          icon: Icon(isTimerRunning ? Icons.pause : Icons.play_arrow),
-                        ),
-                      ],
-                    )
-                  )
+          ),
+        ),
+
+        homepageView.timeSelect => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text("Select rest time", style: TextStyle(fontSize: 25)),
+            ),
+            Text("Choose a preset or customize your own time",
+              style: TextStyle(
+                color: Colors.grey,
+              
+              ),
+            ),
+            Expanded(
+              child: ShaderMask(
+                shaderCallback: (Rect bounds) {
+                  return LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0.0, 0.10],
+                    colors: [Colors.transparent, Colors.white],
+                  ).createShader(bounds);
                 },
-          )
-        );
+                blendMode: BlendMode.dstIn,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ListView.separated(
+                    itemCount: timeList.length + 1,
+                    separatorBuilder:
+                        (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      if (index == 0){
+                        return Material(
+                          type: MaterialType.transparency,
+                          child: ListTile(
+                            onTap: customTimer, 
+                            leading: Icon(Icons.access_alarm, color: Colors.indigo,),
+                          title: Text(
+                            "Custom time",
+                            textAlign: TextAlign.center,
+                          ),
+                          tileColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            side: BorderSide(color: Colors.grey, width: 2.0),
+                          ),
+                          ),
+                        );
+                      }
+
+                      final double seconds = timeList[index - 1];
+                      return Material(
+                        type: MaterialType.transparency,
+                        child: ListTile(
+                          onTap: () {
+                            selectedRestSeconds = seconds;
+                            setState(() {
+                              currentView = homepageView.countdownTimer;
+                              timeLeft = selectedRestSeconds;
+                            });
+                          },
+                          leading: Icon(Icons.access_alarm, color: Colors.indigo,),
+                          title: Text(
+                            secondsToMinutes(seconds),
+                            textAlign: TextAlign.center,
+                          ),
+                          tileColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            side: BorderSide(color: Colors.grey, width: 2.0),
+                          ),
+                          minVerticalPadding: 10.0,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        homepageView.countdownTimer => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 280.0,
+                height: 280.0,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(height: 25.0),
+                        Text(
+                          secondsToMinutes(timeLeft),
+                          style: TextStyle(fontSize: 60.0),
+                        ),
+                        Icon(Icons.fitness_center, size: 40.0),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 280,
+                      width: 280,
+                      child: CircularProgressIndicator(
+                        value: (timeLeft / selectedRestSeconds),
+                        strokeWidth: 8.0,
+                        color: Colors.indigo,
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          228,
+                          225,
+                          225,
+                        ),
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      iconSize: 50.0,
+                      onPressed: startTimer,
+                      icon: Icon(
+                        isTimerRunning ? Icons.pause : Icons.play_arrow,
+                      ),
+                    ),
+                    SizedBox(width: 10.0),
+                    IconButton(
+                      iconSize: 50.0,
+                      onPressed: restartTimer,
+                      icon: Icon(Icons.repeat),
+                    ),
+                    SizedBox(width: 10.0),
+                    IconButton(
+                      iconSize: 50.0,
+                      onPressed: cancelTimer,
+                      icon: Icon(Icons.cancel),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      },
+    );
   }
 }
